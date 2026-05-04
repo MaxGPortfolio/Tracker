@@ -28,7 +28,7 @@ final class TabBarController: UITabBarController {
     // MARK: - Setup
     
     private func setupViewControllers() {
-        let trackersListVC = TrackersListViewController()
+        let trackersListVC = TrackersViewController()
         let statsListVC = StatisticsListViewController()
 
         let trackersNav = UINavigationController(rootViewController: trackersListVC)

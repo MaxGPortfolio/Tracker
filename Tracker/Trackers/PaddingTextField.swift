@@ -7,9 +7,25 @@
 
 import UIKit
 
+// MARK: - PaddingTextField
+
 final class PaddingTextField: UITextField {
 
-    private let padding = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+    // MARK: - Constants
+
+    private enum Constants {
+        static let horizontalInset: CGFloat = 16
+        static let verticalInset: CGFloat = 0
+    }
+
+    private let padding = UIEdgeInsets(
+        top: Constants.verticalInset,
+        left: Constants.horizontalInset,
+        bottom: Constants.verticalInset,
+        right: Constants.horizontalInset
+    )
+
+    // MARK: - Overrides
 
     override func textRect(forBounds bounds: CGRect) -> CGRect {
         bounds.inset(by: padding)

@@ -7,33 +7,51 @@
 
 import UIKit
 
+// MARK: - TrackerCategoryHeaderView
+
 final class TrackerCategoryHeaderView: UICollectionReusableView {
 
-    static let reuseIdentifier = "TrackerCategoryHeaderView"
+    // MARK: - Constants
+
+    private enum Constants {
+        static let reuseIdentifier = "TrackerCategoryHeaderView"
+
+        static let titleFontSize: CGFloat = 19
+        static let horizontalInset: CGFloat = 28
+        static let bottomInset: CGFloat = 12
+    }
+
+    static let reuseIdentifier = Constants.reuseIdentifier
+
+    // MARK: - Private Properties
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 19, weight: .bold)
+        label.font = .systemFont(ofSize: Constants.titleFontSize, weight: .bold)
         label.textColor = .ypBlack
         label.textAlignment = .left
         return label
     }()
+
+    // MARK: - Init
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 28),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
-            titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalInset),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalInset),
+            titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.bottomInset),
         ])
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: - Public
 
     func configure(with title: String) {
         titleLabel.text = title

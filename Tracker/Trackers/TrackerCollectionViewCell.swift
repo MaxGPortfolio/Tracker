@@ -9,18 +9,38 @@ import UIKit
 
 final class TrackerCollectionViewCell: UICollectionViewCell {
     
-    static let reuseIdentifier: String = "TrackerCollectionViewCell"
-    
     private enum Constants {
-        static let plusButtonImage = UIImage(resource: .plusButton)
+        static let reuseIdentifier = "TrackerCollectionViewCell"
+
+        static let emojiFontSize: CGFloat = 14
+        static let titleFontSize: CGFloat = 12
+        static let countFontSize: CGFloat = 12
+
+        static let cardCornerRadius: CGFloat = 16
+        static let emojiCornerRadius: CGFloat = 12
+        static let plusCornerRadius: CGFloat = 17
+
+        static let cardHeight: CGFloat = 90
+        static let counterHeight: CGFloat = 58
+        static let emojiSize: CGFloat = 24
+        static let plusSize: CGFloat = 34
+
+        static let topInset: CGFloat = 12
+        static let smallInset: CGFloat = 8
+        static let horizontalInset: CGFloat = 12
+        static let countTopInset: CGFloat = 16
+        static let countBottomInset: CGFloat = 24
+        static let countTrailingInset: CGFloat = 54
     }
+    
+    static let reuseIdentifier = Constants.reuseIdentifier
     
     // MARK: - Private Properties
     
     private lazy var cardView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.cornerRadius = 16
+        view.layer.cornerRadius = Constants.cardCornerRadius
         view.clipsToBounds = true
         return view
     }()
@@ -29,7 +49,7 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.clipsToBounds = true
-        view.layer.cornerRadius = 12
+        view.layer.cornerRadius = Constants.emojiCornerRadius
         view.backgroundColor = .emojiBackground
         return view
     }()
@@ -37,7 +57,7 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     private lazy var emojiLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 14)
+        label.font = UIFont.systemFont(ofSize: Constants.emojiFontSize)
         label.textAlignment = .center
         return label
     }()
@@ -45,7 +65,7 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        label.font = UIFont.systemFont(ofSize: Constants.titleFontSize, weight: .medium)
         label.textColor = .ypWhite
         label.numberOfLines = 2
         return label
@@ -54,7 +74,7 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     private lazy var countLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        label.font = UIFont.systemFont(ofSize: Constants.countFontSize, weight: .medium)
         label.textColor = .ypBlack
         label.numberOfLines = 1
         return label
@@ -63,13 +83,13 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     private lazy var plusBackgroundView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.cornerRadius = 17
+        view.layer.cornerRadius = Constants.plusCornerRadius
         view.clipsToBounds = true
         return view
     }()
     
     private lazy var plusButton: UIButton = {
-        let button = UIButton()
+        let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.clipsToBounds = true
         button.setImage(UIImage(systemName: "plus"), for: .normal)
@@ -99,6 +119,8 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     
     var onCompleteButtonTap: (() -> Void)?
     
+    // MARK: - Public
+    
     func configure(
         with tracker: Tracker,
         isCompleted: Bool,
@@ -112,9 +134,8 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
         cardView.backgroundColor = tracker.color
         plusBackgroundView.backgroundColor = tracker.color
         
-        let image = isCompleted
-        ? UIImage(systemName: "checkmark")
-        : UIImage(systemName: "plus")
+        let imageName = isCompleted ? "checkmark" : "plus"
+        let image = UIImage(systemName: imageName)
         
         plusButton.setImage(image, for: .normal)
         plusButton.tintColor = .ypWhite
@@ -125,6 +146,8 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
         plusBackgroundView.alpha = isButtonEnabled ? 1.0 : 0.5
         plusButton.alpha = isButtonEnabled ? 1.0 : 0.5
     }
+    
+    // MARK: - Private Methods
     
     private func daysText(for count: Int) -> String {
         let lastTwoDigits = count % 100
@@ -163,42 +186,42 @@ private extension TrackerCollectionViewCell {
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor),
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            cardView.heightAnchor.constraint(equalToConstant: 90),
+            cardView.heightAnchor.constraint(equalToConstant: Constants.cardHeight),
             
-            emojiBackgroundView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 12),
-            emojiBackgroundView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 12),
-            emojiBackgroundView.heightAnchor.constraint(equalToConstant: 24),
-            emojiBackgroundView.widthAnchor.constraint(equalToConstant: 24),
+            emojiBackgroundView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.topInset),
+            emojiBackgroundView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.horizontalInset),
+            emojiBackgroundView.heightAnchor.constraint(equalToConstant: Constants.emojiSize),
+            emojiBackgroundView.widthAnchor.constraint(equalToConstant: Constants.emojiSize),
             
             emojiLabel.centerXAnchor.constraint(equalTo: emojiBackgroundView.centerXAnchor),
             emojiLabel.centerYAnchor.constraint(equalTo: emojiBackgroundView.centerYAnchor),
             emojiLabel.heightAnchor.constraint(equalTo: emojiBackgroundView.heightAnchor),
             emojiLabel.widthAnchor.constraint(equalTo: emojiBackgroundView.widthAnchor),
             
-            titleLabel.topAnchor.constraint(equalTo: emojiBackgroundView.bottomAnchor, constant: 8),
-            titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 12),
-            titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            titleLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12),
+            titleLabel.topAnchor.constraint(equalTo: emojiBackgroundView.bottomAnchor, constant: Constants.smallInset),
+            titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.horizontalInset),
+            titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.horizontalInset),
+            titleLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -Constants.horizontalInset),
             
             counterContainerView.topAnchor.constraint(equalTo: cardView.bottomAnchor),
             counterContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             counterContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            counterContainerView.heightAnchor.constraint(equalToConstant: 58),
+            counterContainerView.heightAnchor.constraint(equalToConstant: Constants.counterHeight),
             
-            countLabel.topAnchor.constraint(equalTo: counterContainerView.topAnchor, constant: 16),
-            countLabel.leadingAnchor.constraint(equalTo: counterContainerView.leadingAnchor, constant: 12),
-            countLabel.trailingAnchor.constraint(equalTo: counterContainerView.trailingAnchor, constant: -54),
-            countLabel.bottomAnchor.constraint(equalTo: counterContainerView.bottomAnchor, constant: -24),
+            countLabel.topAnchor.constraint(equalTo: counterContainerView.topAnchor, constant: Constants.countTopInset),
+            countLabel.leadingAnchor.constraint(equalTo: counterContainerView.leadingAnchor, constant: Constants.horizontalInset),
+            countLabel.trailingAnchor.constraint(equalTo: counterContainerView.trailingAnchor, constant: -Constants.countTrailingInset),
+            countLabel.bottomAnchor.constraint(equalTo: counterContainerView.bottomAnchor, constant: -Constants.countBottomInset),
             
             plusBackgroundView.centerYAnchor.constraint(equalTo: countLabel.centerYAnchor),
-            plusBackgroundView.trailingAnchor.constraint(equalTo: counterContainerView.trailingAnchor, constant: -12),
-            plusBackgroundView.widthAnchor.constraint(equalToConstant: 34),
-            plusBackgroundView.heightAnchor.constraint(equalToConstant: 34),
+            plusBackgroundView.trailingAnchor.constraint(equalTo: counterContainerView.trailingAnchor, constant: -Constants.horizontalInset),
+            plusBackgroundView.widthAnchor.constraint(equalToConstant: Constants.plusSize),
+            plusBackgroundView.heightAnchor.constraint(equalToConstant: Constants.plusSize),
             
             plusButton.centerXAnchor.constraint(equalTo: plusBackgroundView.centerXAnchor),
             plusButton.centerYAnchor.constraint(equalTo: plusBackgroundView.centerYAnchor),
-            plusButton.widthAnchor.constraint(equalToConstant: 34),
-            plusButton.heightAnchor.constraint(equalToConstant: 34)
+            plusButton.widthAnchor.constraint(equalToConstant: Constants.plusSize),
+            plusButton.heightAnchor.constraint(equalToConstant: Constants.plusSize),
         ])
     }
 }

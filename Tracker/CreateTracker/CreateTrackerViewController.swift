@@ -8,61 +8,66 @@
 import UIKit
 
 final class CreateTrackerViewController: UIViewController {
+    
+    // MARK: - Constants
+
+    private enum Constants {
+        static let titleLimit = 38
+
+        static let screenTitleHabit = "Новая привычка"
+        static let screenTitleIrregularEvent = "Новое нерегулярное событие"
+        static let categoryRowTitle = "Категория"
+        static let scheduleRowTitle = "Расписание"
+        static let everyDayTitle = "Каждый день"
+        static let textFieldPlaceholder = "Введите название трекера"
+        static let titleLimitText = "Ограничение 38 символов"
+        static let cancelButtonTitle = "Отменить"
+        static let createButtonTitle = "Создать"
+        static let defaultEmoji = "🙂"
+        static let cellReuseIdentifier = "Cell"
+
+        static let titleFontSize: CGFloat = 16
+        static let textFontSize: CGFloat = 17
+        static let buttonFontSize: CGFloat = 16
+        static let titleLabelHeight: CGFloat = 22
+        static let rowHeight: CGFloat = 75
+        static let textFieldBackgroundHeight: CGFloat = 113
+        static let buttonHeight: CGFloat = 60
+        static let cornerRadius: CGFloat = 16
+        static let borderWidth: CGFloat = 1
+        static let separatorHeight: CGFloat = 0.5
+
+        static let titleTopInset: CGFloat = 27
+        static let textFieldTopInset: CGFloat = 24
+        static let horizontalInset: CGFloat = 16
+        static let titleLimitTopInset: CGFloat = 8
+        static let tableViewTopInset: CGFloat = 32
+        static let bottomButtonHorizontalInset: CGFloat = 20
+        static let bottomButtonCenterSpacing: CGFloat = 4
+
+        static let zeroInset: CGFloat = 0
+    }
+
+    // MARK: - Private Properties
 
     private let type: TrackerCreationType
-    
+
     private var trackerTitle: String = ""
     private var selectedCategory: String?
     private var selectedSchedule: [Weekday] = []
     private var selectedEmoji: String?
     private var selectedColor: UIColor?
-    var onTrackerCreated: ((Tracker) -> Void)?
-    
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        setupViews()
-        setupLayout()
-        tableView.rowHeight = 75
-        tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-        navigationItem.hidesBackButton = true
-        textField.delegate = self
-        updateCreateButtonState()
-    }
-    
-    private enum Constants {
-        static let titleLimit = 38
-    }
 
-    init(type: TrackerCreationType) {
-        self.type = type
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private var screenTitle: String {
-        switch type {
-        case .habit:
-            return "Новая привычка"
-        case .irregularEvent:
-            return "Новое нерегулярное событие"
-        }
-    }
-    
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = screenTitle
         label.textAlignment = .center
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        label.font = UIFont.systemFont(ofSize: Constants.titleFontSize, weight: .medium)
         label.textColor = .ypBlack
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var textFieldBackgroundView: UIView = {
         let view = UIView()
         view.backgroundColor = .ypWhite
@@ -70,59 +75,59 @@ final class CreateTrackerViewController: UIViewController {
         view.clipsToBounds = true
         return view
     }()
-    
+
     private lazy var textField: UITextField = {
         let textField = PaddingTextField()
-        textField.font = UIFont.systemFont(ofSize: 17, weight: .regular)
+        textField.font = UIFont.systemFont(ofSize: Constants.textFontSize, weight: .regular)
         textField.attributedPlaceholder = NSAttributedString(
-            string: "Введите название трекера",
+            string: Constants.textFieldPlaceholder,
             attributes: [
-                .foregroundColor: UIColor.ypGray
+                .foregroundColor: UIColor.ypGray,
             ]
         )
         textField.textColor = .ypBlack
         textField.backgroundColor = .ypBackground
         textField.borderStyle = .none
-        textField.layer.cornerRadius = 16
+        textField.layer.cornerRadius = Constants.cornerRadius
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.clipsToBounds = true
         textField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         return textField
     }()
-    
+
     private lazy var titleLimitLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Ограничение 38 символов"
-        label.font = .systemFont(ofSize: 17, weight: .regular)
+        label.text = Constants.titleLimitText
+        label.font = .systemFont(ofSize: Constants.textFontSize, weight: .regular)
         label.textColor = .ypRed
         label.textAlignment = .center
         label.isHidden = true
         return label
     }()
-    
+
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .ypBackground
         tableView.separatorStyle = .none
-        tableView.layer.cornerRadius = 16
+        tableView.layer.cornerRadius = Constants.cornerRadius
         tableView.clipsToBounds = true
         tableView.isScrollEnabled = false
         tableView.dataSource = self
         tableView.delegate = self
-        
+
         return tableView
     }()
-    
+
     private lazy var cancelButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Отменить", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        button.setTitle(Constants.cancelButtonTitle, for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: Constants.buttonFontSize, weight: .medium)
         button.setTitleColor(.ypRed, for: .normal)
-        button.layer.borderWidth = 1
+        button.layer.borderWidth = Constants.borderWidth
         button.layer.borderColor = UIColor.ypRed.cgColor
-        button.layer.cornerRadius = 16
+        button.layer.cornerRadius = Constants.cornerRadius
         button.backgroundColor = .clear
         button.translatesAutoresizingMaskIntoConstraints = false
         button.clipsToBounds = true
@@ -134,14 +139,14 @@ final class CreateTrackerViewController: UIViewController {
         )
         return button
     }()
-    
+
     private lazy var createButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Создать", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        button.setTitle(Constants.createButtonTitle, for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: Constants.buttonFontSize, weight: .medium)
         button.setTitleColor(.ypBlack, for: .normal)
         button.setTitleColor(.ypBlack, for: .disabled)
-        button.layer.cornerRadius = 16
+        button.layer.cornerRadius = Constants.cornerRadius
         button.backgroundColor = .ypWhite
         button.translatesAutoresizingMaskIntoConstraints = false
         button.clipsToBounds = true
@@ -153,16 +158,7 @@ final class CreateTrackerViewController: UIViewController {
         )
         return button
     }()
-    
-    private var rows: [String] {
-        switch type {
-        case .habit:
-            return ["Категория", "Расписание"]
-        case .irregularEvent:
-            return ["Категория"]
-        }
-    }
-    
+
     private let trackerColors: [UIColor] = [
         .colorSelection1,
         .colorSelection2,
@@ -181,39 +177,95 @@ final class CreateTrackerViewController: UIViewController {
         .colorSelection15,
         .colorSelection16,
         .colorSelection17,
-        .colorSelection18
+        .colorSelection18,
     ]
-    
+
+    // MARK: - Public Properties
+
+    var onTrackerCreated: ((Tracker) -> Void)?
+
+    // MARK: - Init
+
+    init(type: TrackerCreationType) {
+        self.type = type
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Computed Properties
+
+    private var screenTitle: String {
+        switch type {
+        case .habit:
+            return Constants.screenTitleHabit
+        case .irregularEvent:
+            return Constants.screenTitleIrregularEvent
+        }
+    }
+
+    private var rows: [String] {
+        switch type {
+        case .habit:
+            return [Constants.categoryRowTitle, Constants.scheduleRowTitle]
+        case .irregularEvent:
+            return [Constants.categoryRowTitle]
+        }
+    }
+
+    // MARK: - Lifecycle
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        setupViews()
+        setupLayout()
+        tableView.rowHeight = Constants.rowHeight
+        tableView.separatorInset = UIEdgeInsets(
+            top: Constants.zeroInset,
+            left: Constants.horizontalInset,
+            bottom: Constants.zeroInset,
+            right: Constants.horizontalInset
+        )
+        navigationItem.hidesBackButton = true
+        textField.delegate = self
+        updateCreateButtonState()
+    }
+
+    // MARK: - Private Methods
+
     private func updateCreateButtonState() {
         let isTitleValid = !trackerTitle.isEmpty
         let isScheduleValid = type == .irregularEvent || !selectedSchedule.isEmpty
         let isCreateEnabled = isTitleValid && isScheduleValid
         let isDarkMode = traitCollection.userInterfaceStyle == .dark
-        
+
         createButton.isEnabled = isCreateEnabled
-        
+
         if !isCreateEnabled {
             createButton.backgroundColor = .ypGray
             createButton.setTitleColor(.whiteFixed, for: .disabled)
             return
         }
-        
+
         createButton.backgroundColor = isDarkMode ? .whiteFixed : .blackFixed
         createButton.setTitleColor(isDarkMode ? .blackFixed : .whiteFixed, for: .normal)
     }
-    
+
     @objc private func textFieldDidChange(_ textField: UITextField) {
         trackerTitle = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         updateCreateButtonState()
     }
-    
+
     private func createTracker() {
         let randomColor = trackerColors.randomElement() ?? .systemBlue
         let tracker = Tracker(
             id: UUID(),
             title: trackerTitle,
             color: selectedColor ?? randomColor,
-            emoji: selectedEmoji ?? "🙂",
+            emoji: selectedEmoji ?? Constants.defaultEmoji,
             schedule: type == .habit ? selectedSchedule : Weekday.allCases,
             creationDate: Date()
         )
@@ -222,6 +274,8 @@ final class CreateTrackerViewController: UIViewController {
         dismiss(animated: true)
     }
 }
+
+// MARK: - UITableViewDataSource, UITableViewDelegate
 
 extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -232,15 +286,15 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "Cell")
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: Constants.cellReuseIdentifier)
         cell.textLabel?.text = rows[indexPath.row]
-        cell.textLabel?.font = .systemFont(ofSize: 17)
+        cell.textLabel?.font = .systemFont(ofSize: Constants.textFontSize)
         cell.textLabel?.textColor = .ypBlack
         cell.backgroundColor = .clear
         cell.tintColor = .ypGray
-        
+
         cell.accessoryType = .disclosureIndicator
-        
+
         if indexPath.row < rows.count - 1 {
             let separatorView = UIView()
             separatorView.backgroundColor = .ypGray
@@ -248,26 +302,26 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
             cell.addSubview(separatorView)
 
             NSLayoutConstraint.activate([
-                separatorView.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 16),
-                separatorView.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -16),
+                separatorView.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: Constants.horizontalInset),
+                separatorView.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -Constants.horizontalInset),
                 separatorView.bottomAnchor.constraint(equalTo: cell.bottomAnchor),
-                separatorView.heightAnchor.constraint(equalToConstant: 0.5)
+                separatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
             ])
         }
-        
-        if rows[indexPath.row] == "Расписание", !selectedSchedule.isEmpty {
+
+        if rows[indexPath.row] == Constants.scheduleRowTitle, !selectedSchedule.isEmpty {
             if selectedSchedule.count == Weekday.allCases.count {
-                cell.detailTextLabel?.text = "Каждый день"
+                cell.detailTextLabel?.text = Constants.everyDayTitle
             } else {
                 cell.detailTextLabel?.text = selectedSchedule.map { $0.shortTitle }.joined(separator: ", ")
             }
 
-            cell.detailTextLabel?.font = .systemFont(ofSize: 17)
+            cell.detailTextLabel?.font = .systemFont(ofSize: Constants.textFontSize)
             cell.detailTextLabel?.textColor = .ypGray
         }
         return cell
     }
-    
+
     func tableView(
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
@@ -276,7 +330,7 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
 
         let rowTitle = rows[indexPath.row]
 
-        if rowTitle == "Расписание" {
+        if rowTitle == Constants.scheduleRowTitle {
             let viewController = ScheduleViewController(selectedWeekdays: selectedSchedule)
             viewController.onScheduleSelected = { [weak self] weekdays in
                 self?.selectedSchedule = weekdays
@@ -289,6 +343,8 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
     }
 }
 
+// MARK: - Setup
+
 private extension CreateTrackerViewController {
     func setupViews() {
         view.addSubview(titleLabel)
@@ -298,48 +354,50 @@ private extension CreateTrackerViewController {
         view.addSubview(tableView)
         view.addSubview(cancelButton)
         view.addSubview(createButton)
-        
+
         view.backgroundColor = .ypWhite
     }
-    
+
     private func setupLayout() {
         let rowsCount = rows.count
 
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 27),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: Constants.titleTopInset),
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            titleLabel.heightAnchor.constraint(equalToConstant: 22),
-            
-            textFieldBackgroundView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
-            textFieldBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            textFieldBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            textFieldBackgroundView.heightAnchor.constraint(equalToConstant: 113),
-            
-            textField.topAnchor.constraint(equalTo: textFieldBackgroundView.topAnchor, constant: 0),
-            textField.leadingAnchor.constraint(equalTo: textFieldBackgroundView.leadingAnchor, constant: 0),
-            textField.trailingAnchor.constraint(equalTo: textFieldBackgroundView.trailingAnchor, constant: 0),
-            textField.heightAnchor.constraint(equalToConstant: 75),
-            
-            titleLimitLabel.topAnchor.constraint(equalTo: textField.bottomAnchor, constant: 8),
+            titleLabel.heightAnchor.constraint(equalToConstant: Constants.titleLabelHeight),
+
+            textFieldBackgroundView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Constants.textFieldTopInset),
+            textFieldBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            textFieldBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            textFieldBackgroundView.heightAnchor.constraint(equalToConstant: Constants.textFieldBackgroundHeight),
+
+            textField.topAnchor.constraint(equalTo: textFieldBackgroundView.topAnchor, constant: Constants.zeroInset),
+            textField.leadingAnchor.constraint(equalTo: textFieldBackgroundView.leadingAnchor, constant: Constants.zeroInset),
+            textField.trailingAnchor.constraint(equalTo: textFieldBackgroundView.trailingAnchor, constant: Constants.zeroInset),
+            textField.heightAnchor.constraint(equalToConstant: Constants.rowHeight),
+
+            titleLimitLabel.topAnchor.constraint(equalTo: textField.bottomAnchor, constant: Constants.titleLimitTopInset),
             titleLimitLabel.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
 
-            tableView.topAnchor.constraint(equalTo: titleLimitLabel.bottomAnchor, constant: 32),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            tableView.heightAnchor.constraint(equalToConstant: CGFloat(rowsCount) * 75),
-            
-            cancelButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0),
-            cancelButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            cancelButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor, constant: -4),
-            cancelButton.heightAnchor.constraint(equalToConstant: 60),
-            
+            tableView.topAnchor.constraint(equalTo: titleLimitLabel.bottomAnchor, constant: Constants.tableViewTopInset),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            tableView.heightAnchor.constraint(equalToConstant: CGFloat(rowsCount) * Constants.rowHeight),
+
+            cancelButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: Constants.zeroInset),
+            cancelButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.bottomButtonHorizontalInset),
+            cancelButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor, constant: -Constants.bottomButtonCenterSpacing),
+            cancelButton.heightAnchor.constraint(equalToConstant: Constants.buttonHeight),
+
             createButton.centerYAnchor.constraint(equalTo: cancelButton.centerYAnchor),
-            createButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor, constant: 4),
-            createButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            createButton.heightAnchor.constraint(equalToConstant: 60)
+            createButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor, constant: Constants.bottomButtonCenterSpacing),
+            createButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.bottomButtonHorizontalInset),
+            createButton.heightAnchor.constraint(equalToConstant: Constants.buttonHeight),
         ])
     }
 }
+
+// MARK: - UITextFieldDelegate
 
 extension CreateTrackerViewController: UITextFieldDelegate {
     func textField(
@@ -362,7 +420,7 @@ extension CreateTrackerViewController: UITextFieldDelegate {
 
         return !isLimitExceeded
     }
-    
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
