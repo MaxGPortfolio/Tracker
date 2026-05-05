@@ -397,7 +397,6 @@ private extension TrackersViewController {
         visibleCategories = categories.compactMap { category in
             let trackers = category.trackers.filter { tracker in
                 tracker.schedule.contains(selectedWeekday)
-                && !isDateBeforeCreation(selectedDate, tracker: tracker)
             }
             guard !trackers.isEmpty else {
                 return nil
@@ -418,11 +417,6 @@ private extension TrackersViewController {
         return selectedDay > today
     }
 
-    private func isDateBeforeCreation(_ date: Date, tracker: Tracker) -> Bool {
-        let selectedDay = Calendar.current.startOfDay(for: date)
-        let creationDay = Calendar.current.startOfDay(for: tracker.creationDate)
-        return selectedDay < creationDay
-    }
 }
 
 // MARK: - UICollectionViewDataSource

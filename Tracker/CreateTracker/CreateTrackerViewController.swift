@@ -47,7 +47,32 @@ final class CreateTrackerViewController: UIViewController {
 
         static let zeroInset: CGFloat = 0
     }
-
+    
+    // MARK: - Mock data
+    
+    private enum MockData {
+        static let trackerColors: [UIColor] = [
+            .colorSelection1,
+            .colorSelection2,
+            .colorSelection3,
+            .colorSelection4,
+            .colorSelection5,
+            .colorSelection6,
+            .colorSelection7,
+            .colorSelection8,
+            .colorSelection9,
+            .colorSelection10,
+            .colorSelection11,
+            .colorSelection12,
+            .colorSelection13,
+            .colorSelection14,
+            .colorSelection15,
+            .colorSelection16,
+            .colorSelection17,
+            .colorSelection18
+        ]
+    }
+    
     // MARK: - Private Properties
 
     private let type: TrackerCreationType
@@ -159,27 +184,6 @@ final class CreateTrackerViewController: UIViewController {
         return button
     }()
 
-    private let trackerColors: [UIColor] = [
-        .colorSelection1,
-        .colorSelection2,
-        .colorSelection3,
-        .colorSelection4,
-        .colorSelection5,
-        .colorSelection6,
-        .colorSelection7,
-        .colorSelection8,
-        .colorSelection9,
-        .colorSelection10,
-        .colorSelection11,
-        .colorSelection12,
-        .colorSelection13,
-        .colorSelection14,
-        .colorSelection15,
-        .colorSelection16,
-        .colorSelection17,
-        .colorSelection18,
-    ]
-
     // MARK: - Public Properties
 
     var onTrackerCreated: ((Tracker) -> Void)?
@@ -192,26 +196,22 @@ final class CreateTrackerViewController: UIViewController {
     }
 
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        nil
     }
 
     // MARK: - Computed Properties
 
     private var screenTitle: String {
         switch type {
-        case .habit:
-            return Constants.screenTitleHabit
-        case .irregularEvent:
-            return Constants.screenTitleIrregularEvent
+        case .habit: Constants.screenTitleHabit
+        case .irregularEvent: Constants.screenTitleIrregularEvent
         }
     }
 
     private var rows: [String] {
         switch type {
-        case .habit:
-            return [Constants.categoryRowTitle, Constants.scheduleRowTitle]
-        case .irregularEvent:
-            return [Constants.categoryRowTitle]
+        case .habit: [Constants.categoryRowTitle, Constants.scheduleRowTitle]
+        case .irregularEvent: [Constants.categoryRowTitle]
         }
     }
 
@@ -260,7 +260,7 @@ final class CreateTrackerViewController: UIViewController {
     }
 
     private func createTracker() {
-        let randomColor = trackerColors.randomElement() ?? .systemBlue
+        let randomColor = MockData.trackerColors.randomElement() ?? .systemBlue
         let tracker = Tracker(
             id: UUID(),
             title: trackerTitle,
