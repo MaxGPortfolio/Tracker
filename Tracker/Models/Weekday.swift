@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Weekday
 
-enum Weekday: CaseIterable {
+enum Weekday: String, CaseIterable {
     case monday
     case tuesday
     case wednesday
