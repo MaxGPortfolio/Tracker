@@ -531,12 +531,9 @@ extension CreateTrackerViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         switch CollectionSection(rawValue: section) {
-        case .emoji:
-            return MockData.emojis.count
-        case .color:
-            return MockData.trackerColors.count
-        case .none:
-            return 0
+        case .emoji: MockData.emojis.count
+        case .color: MockData.trackerColors.count
+        case .none: 0
         }
     }
     

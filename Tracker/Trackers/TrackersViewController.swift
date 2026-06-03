@@ -412,12 +412,10 @@ private extension TrackersViewController {
     }
 
     private func toggleTrackerCompletion(_ tracker: Tracker) {
-        guard canCompleteTracker(on: selectedDate) else {
+        guard canCompleteTracker(on: selectedDate), !isTrackerCompleted(tracker, on: selectedDate) else {
             return
         }
-        guard !isTrackerCompleted(tracker, on: selectedDate) else {
-            return
-        }
+        
         do {
             guard let trackerCoreData = try trackerStore.trackerCoreData(with: tracker.id) else {
                 return
