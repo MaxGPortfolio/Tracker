@@ -249,7 +249,7 @@ final class CreateTrackerViewController: UIViewController {
     
     // MARK: - Public Properties
     
-    var onTrackerCreated: ((Tracker) -> Void)?
+    var onTrackerCreated: ((Tracker, String) -> Void)?
     
     // MARK: - Init
     
@@ -310,7 +310,12 @@ final class CreateTrackerViewController: UIViewController {
         let isScheduleValid = type == .irregularEvent || !selectedSchedule.isEmpty
         let isEmojiSelected = selectedEmoji != nil
         let isColorSelected = selectedColor != nil
-        let isCreateEnabled = isTitleValid && isScheduleValid && isEmojiSelected && isColorSelected
+        let isCategorySelected = selectedCategory != nil
+        let isCreateEnabled = isTitleValid
+            && isCategorySelected
+            && isScheduleValid
+            && isEmojiSelected
+            && isColorSelected
         let isDarkMode = traitCollection.userInterfaceStyle == .dark
         
         createButton.isEnabled = isCreateEnabled
@@ -331,7 +336,8 @@ final class CreateTrackerViewController: UIViewController {
     }
     
     private func createTracker() {
-        guard let selectedEmoji,
+        guard let selectedCategory,
+              let selectedEmoji,
               let selectedColor else {
             return
         }
@@ -345,7 +351,7 @@ final class CreateTrackerViewController: UIViewController {
             creationDate: Date()
         )
         
-        onTrackerCreated?(tracker)
+        onTrackerCreated?(tracker, selectedCategory)
         dismiss(animated: true)
     }
 }
@@ -394,6 +400,14 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
             cell.detailTextLabel?.font = .systemFont(ofSize: Constants.textFontSize)
             cell.detailTextLabel?.textColor = .ypGray
         }
+        
+        if rows[indexPath.row] == Constants.categoryRowTitle,
+           let selectedCategory {
+            cell.detailTextLabel?.text = selectedCategory
+            cell.detailTextLabel?.font = .systemFont(ofSize: Constants.textFontSize)
+            cell.detailTextLabel?.textColor = .ypGray
+        }
+        
         return cell
     }
     
@@ -413,6 +427,20 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
                 self?.updateCreateButtonState()
             }
             
+            navigationController?.pushViewController(viewController, animated: true)
+        }
+        
+        if rowTitle == Constants.categoryRowTitle {
+            let viewController = TrackerCategoryViewController(
+                selectedCategoryTitle: selectedCategory
+            )
+
+            viewController.onCategorySelected = { [weak self] title in
+                self?.selectedCategory = title
+                self?.tableView.reloadData()
+                self?.updateCreateButtonState()
+            }
+
             navigationController?.pushViewController(viewController, animated: true)
         }
     }
@@ -540,12 +568,17 @@ extension CreateTrackerViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         switch CollectionSection(rawValue: indexPath.section) {
         case .emoji:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EmojiSelectionCell.reuseIdentifier, for: indexPath) as? EmojiSelectionCell
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: EmojiSelectionCell.reuseIdentifier, for: indexPath
+            ) as? EmojiSelectionCell
             cell?.configure(with: MockData.emojis[indexPath.item])
             return cell ?? UICollectionViewCell()
             
         case .color:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ColorSelectionCell.reuseIdentifier, for: indexPath) as? ColorSelectionCell
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: ColorSelectionCell.reuseIdentifier,
+                for: indexPath
+            ) as? ColorSelectionCell
             cell?.configure(with: MockData.trackerColors[indexPath.item])
             return cell ?? UICollectionViewCell()
             
@@ -559,12 +592,14 @@ extension CreateTrackerViewController: UICollectionViewDataSource {
         viewForSupplementaryElementOfKind kind: String,
         at indexPath: IndexPath
     ) -> UICollectionReusableView {
-        guard kind == UICollectionView.elementKindSectionHeader,
-              let header = collectionView.dequeueReusableSupplementaryView(
+        guard
+            kind == UICollectionView.elementKindSectionHeader,
+            let header = collectionView.dequeueReusableSupplementaryView(
                 ofKind: kind,
                 withReuseIdentifier: CreateTrackerHeaderView.reuseIdentifier,
                 for: indexPath
-              ) as? CreateTrackerHeaderView else {
+            ) as? CreateTrackerHeaderView
+        else {
             return UICollectionReusableView()
         }
 

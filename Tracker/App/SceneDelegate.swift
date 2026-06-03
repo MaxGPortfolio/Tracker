@@ -9,7 +9,13 @@ import UIKit
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
-    // MARK: - Properties
+    // MARK: - Constants
+    
+    private enum Constants {
+        static let hasSeenOnboardingKey = "hasSeenOnboarding"
+    }
+    
+    // MARK: - Public Properties
     
     var window: UIWindow?
     
@@ -24,7 +30,15 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let window = UIWindow(windowScene: windowScene)
         
-        window.rootViewController = TabBarController()
+        let hasSeenOnboarding = UserDefaults.standard.bool(
+            forKey: Constants.hasSeenOnboardingKey
+        )
+        
+        let rootViewController: UIViewController = hasSeenOnboarding
+            ? TabBarController()
+            : OnboardingPageViewController()
+
+        window.rootViewController = rootViewController
         
         window.makeKeyAndVisible()
         self.window = window

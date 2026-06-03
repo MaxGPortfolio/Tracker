@@ -84,8 +84,8 @@ final class TrackersViewController: UIViewController {
             UIAction { [weak self] _ in
                 let viewController = CreateTrackerTypeViewController()
                 
-                viewController.onTrackerCreated = { [weak self] tracker in
-                    self?.addTracker(tracker)
+                viewController.onTrackerCreated = { [weak self] tracker, categoryTitle in
+                    self?.addTracker(tracker, to: categoryTitle)
                 }
                 
                 let navigationController = UINavigationController(rootViewController: viewController)
@@ -230,15 +230,15 @@ final class TrackersViewController: UIViewController {
 
     // MARK: - Private Methods
 
-    private func addTracker(_ tracker: Tracker) {
+    private func addTracker(_ tracker: Tracker, to categoryTitle: String) {
         do {
-            let category = try categoryStore.getOrCreateCategory(
-                with: Constants.importantCategoryTitle
-            )
+            let category = try categoryStore.getOrCreateCategory(with: categoryTitle)
+
             try trackerStore.addTracker(
                 tracker,
                 to: category
             )
+
             loadDataFromCoreData()
         } catch {
             let nsError = error as NSError
