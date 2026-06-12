@@ -129,12 +129,15 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
         previewView.layer.cornerRadius = Constants.cardCornerRadius
         previewView.clipsToBounds = true
 
-        let parameters = UIPreviewParameters()
-        parameters.backgroundColor = .clear
-        parameters.visiblePath = UIBezierPath(
+        let previewPath = UIBezierPath(
             roundedRect: previewView.bounds,
             cornerRadius: Constants.cardCornerRadius
         )
+
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = previewPath
+        parameters.shadowPath = UIBezierPath()
 
         let target = UIPreviewTarget(
             container: contentView,

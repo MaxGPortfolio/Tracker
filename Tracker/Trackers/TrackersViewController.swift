@@ -52,6 +52,7 @@ final class TrackersViewController: UIViewController {
         static let collectionHeaderHeight: CGFloat = 46
         static let editActionTitle = "Редактировать"
         static let deleteActionTitle = "Удалить"
+        static let contextMenuBlurAlpha: CGFloat = 1
         static let zeroInset: CGFloat = 0
     }
 
@@ -226,6 +227,7 @@ final class TrackersViewController: UIViewController {
 
     private var selectedDate: Date = Date()
     private var isEmptyStateVisible: Bool = true
+    private var contextMenuBlurView: UIVisualEffectView?
     var categories: [TrackerCategory] = []
     var completedTrackers: [TrackerRecord] = []
     private var visibleCategories: [TrackerCategory] = []
@@ -447,6 +449,37 @@ private extension TrackersViewController {
         }
     }
 
+    private func prepareContextMenuBlur() {
+        guard contextMenuBlurView == nil,
+              let window = view.window
+        else {
+            return
+        }
+
+        let blurEffect = UIBlurEffect(style: .regular)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.frame = window.bounds
+        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        blurView.alpha = Constants.zeroInset
+        blurView.isUserInteractionEnabled = false
+
+        window.addSubview(blurView)
+        contextMenuBlurView = blurView
+    }
+
+    private func showPreparedContextMenuBlur() {
+        contextMenuBlurView?.alpha = Constants.contextMenuBlurAlpha
+    }
+
+    private func hideContextMenuBlur() {
+        contextMenuBlurView?.alpha = Constants.zeroInset
+    }
+
+    private func removeContextMenuBlur() {
+        contextMenuBlurView?.removeFromSuperview()
+        contextMenuBlurView = nil
+    }
+
     // MARK: - Date Helpers
 
     private func weekday(from date: Date) -> Weekday {
@@ -560,6 +593,33 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
             return UIMenu(children: [editAction, deleteAction])
         }
     }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplayContextMenu configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        prepareContextMenuBlur()
+
+        animator?.addAnimations { [weak self] in
+            self?.showPreparedContextMenuBlur()
+        }
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        willEndContextMenuInteraction configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        animator?.addAnimations { [weak self] in
+            self?.hideContextMenuBlur()
+        }
+
+        animator?.addCompletion { [weak self] in
+            self?.removeContextMenuBlur()
+        }
+    }
+    
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
