@@ -50,6 +50,14 @@ final class TrackerStore: NSObject {
         request.fetchLimit = 1
         return try context.fetch(request).first
     }
+
+    func deleteTracker(with id: UUID) throws {
+        guard let tracker = try trackerCoreData(with: id) else {
+            return
+        }
+        context.delete(tracker)
+        try context.save()
+    }
     
     func setupFetchedResultsController() throws {
         let request = TrackerCoreData.fetchRequest()

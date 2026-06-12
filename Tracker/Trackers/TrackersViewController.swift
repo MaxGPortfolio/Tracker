@@ -50,6 +50,8 @@ final class TrackersViewController: UIViewController {
         static let collectionItemsPerRow: CGFloat = 2
         static let collectionCellHeight: CGFloat = 148
         static let collectionHeaderHeight: CGFloat = 46
+        static let editActionTitle = "Редактировать"
+        static let deleteActionTitle = "Удалить"
         static let zeroInset: CGFloat = 0
     }
 
@@ -430,6 +432,21 @@ private extension TrackersViewController {
         }
     }
 
+    // MARK: - Context Menu
+
+    private func editTracker(_ tracker: Tracker) {
+        print("Edit tracker:", tracker.title)
+    }
+
+    private func deleteTracker(_ tracker: Tracker) {
+        do {
+            try trackerStore.deleteTracker(with: tracker.id)
+            loadDataFromCoreData()
+        } catch {
+            assertionFailure("Failed to delete tracker: \(error)")
+        }
+    }
+
     // MARK: - Date Helpers
 
     private func weekday(from date: Date) -> Weekday {
@@ -521,6 +538,28 @@ extension TrackersViewController: UICollectionViewDataSource {
 // MARK: - UICollectionViewDelegateFlowLayout
 
 extension TrackersViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        contextMenuConfigurationForItemAt indexPath: IndexPath,
+        point: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        let tracker = visibleCategories[indexPath.section].trackers[indexPath.item]
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            let editAction = UIAction(title: Constants.editActionTitle) { _ in
+                self?.editTracker(tracker)
+            }
+
+            let deleteAction = UIAction(
+                title: Constants.deleteActionTitle,
+                attributes: .destructive
+            ) { _ in
+                self?.deleteTracker(tracker)
+            }
+
+            return UIMenu(children: [editAction, deleteAction])
+        }
+    }
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
