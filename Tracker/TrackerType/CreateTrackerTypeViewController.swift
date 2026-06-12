@@ -85,15 +85,17 @@ final class CreateTrackerTypeViewController: UIViewController {
     
     // MARK: - Public Properties
     
-    var onTrackerCreated: ((Tracker) -> Void)?
+    var onTrackerCreated: ((Tracker, String) -> Void)?
     
     // MARK: - Private Methods
     
     private func openCreateTracker(type: TrackerCreationType) {
         let viewController = CreateTrackerViewController(type: type)
-        viewController.onTrackerCreated = { [weak self] tracker in
-            self?.onTrackerCreated?(tracker)
+
+        viewController.onTrackerCreated = { [weak self] tracker, categoryTitle in
+            self?.onTrackerCreated?(tracker, categoryTitle)
         }
+
         navigationController?.pushViewController(viewController, animated: true)
     }
 }
