@@ -544,19 +544,19 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
         point: CGPoint
     ) -> UIContextMenuConfiguration? {
         let tracker = visibleCategories[indexPath.section].trackers[indexPath.item]
-
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+        
+        return UIContextMenuConfiguration(identifier: indexPath as NSCopying, previewProvider: nil) { [weak self] _ in
             let editAction = UIAction(title: Constants.editActionTitle) { _ in
                 self?.editTracker(tracker)
             }
-
+            
             let deleteAction = UIAction(
                 title: Constants.deleteActionTitle,
                 attributes: .destructive
             ) { _ in
                 self?.deleteTracker(tracker)
             }
-
+            
             return UIMenu(children: [editAction, deleteAction])
         }
     }
@@ -566,12 +566,12 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
         let availableWidth = collectionView.bounds.width
-            - Constants.collectionHorizontalInset * 2
-            - Constants.collectionInteritemSpacing
+        - Constants.collectionHorizontalInset * 2
+        - Constants.collectionInteritemSpacing
         let itemWidth = availableWidth / Constants.collectionItemsPerRow
         return CGSize(width: itemWidth, height: Constants.collectionCellHeight)
     }
-
+    
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
@@ -584,7 +584,7 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
             right: Constants.collectionHorizontalInset
         )
     }
-
+    
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
@@ -592,7 +592,7 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
     ) -> CGFloat {
         Constants.collectionInteritemSpacing
     }
-
+    
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
@@ -600,12 +600,38 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
     ) -> CGFloat {
         Constants.collectionMinimumLineSpacing
     }
-
+    
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
         referenceSizeForHeaderInSection section: Int
     ) -> CGSize {
         CGSize(width: collectionView.bounds.width, height: Constants.collectionHeaderHeight)
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+    ) -> UITargetedPreview? {
+        guard let indexPath = configuration.identifier as? IndexPath,
+              let cell = collectionView.cellForItem(at: indexPath) as? TrackerCollectionViewCell
+        else {
+            return nil
+        }
+        
+        return cell.makeContextMenuPreview()
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+    ) -> UITargetedPreview? {
+        guard let indexPath = configuration.identifier as? IndexPath,
+              let cell = collectionView.cellForItem(at: indexPath) as? TrackerCollectionViewCell
+        else {
+            return nil
+        }
+        
+        return cell.makeContextMenuPreview()
     }
 }

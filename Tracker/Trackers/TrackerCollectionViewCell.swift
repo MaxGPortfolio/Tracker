@@ -121,6 +121,33 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     
     // MARK: - Public
     
+    func makeContextMenuPreview() -> UITargetedPreview {
+        layoutIfNeeded()
+
+        let previewView = cardView.snapshotView(afterScreenUpdates: false) ?? UIView()
+        previewView.frame = cardView.bounds
+        previewView.layer.cornerRadius = Constants.cardCornerRadius
+        previewView.clipsToBounds = true
+
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = UIBezierPath(
+            roundedRect: previewView.bounds,
+            cornerRadius: Constants.cardCornerRadius
+        )
+
+        let target = UIPreviewTarget(
+            container: contentView,
+            center: cardView.center
+        )
+
+        return UITargetedPreview(
+            view: previewView,
+            parameters: parameters,
+            target: target
+        )
+    }
+    
     func configure(
         with tracker: Tracker,
         isCompleted: Bool,
