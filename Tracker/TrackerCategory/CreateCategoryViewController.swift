@@ -92,10 +92,28 @@ final class CreateCategoryViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        titleTextField.delegate = self
 
         setupViews()
         setupLayout()
         updateDoneButtonState()
+        setupKeyboardDismissGesture()
+    }
+    
+    // MARK: - Private Methods
+
+    private func setupKeyboardDismissGesture() {
+        let tapGesture = UITapGestureRecognizer(
+            target: self,
+            action: #selector(dismissKeyboard)
+        )
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 }
 
@@ -151,4 +169,10 @@ private extension CreateCategoryViewController {
     }
 }
 
+extension CreateCategoryViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+}
 

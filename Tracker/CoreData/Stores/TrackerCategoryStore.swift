@@ -103,7 +103,8 @@ final class TrackerCategoryStore: NSObject {
                     color: decodeColor(trackerCoreData.color),
                     emoji: emoji,
                     schedule: decodeSchedule(scheduleString),
-                    creationDate: creationDate
+                    creationDate: creationDate,
+                    type: TrackerCreationType(rawValue: trackerCoreData.type ?? "") ?? .habit
                 )
             }
             return TrackerCategory(

@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - TrackerCreationType
 
-enum TrackerCreationType {
+enum TrackerCreationType: String {
     case habit
     case irregularEvent
 }

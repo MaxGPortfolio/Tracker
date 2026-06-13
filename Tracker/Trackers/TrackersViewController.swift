@@ -15,11 +15,13 @@ final class TrackersViewController: UIViewController {
         static let importantCategoryTitle = "Важное"
         static let screenTitle = "Трекеры"
         static let emptyStateText = "Что будем отслеживать?"
+        static let emptyStateSearchText = "Ничего не найдено"
         static let searchPlaceholder = "Поиск"
         static let dateFormat = "dd.MM.yy"
 
         static let addTrackerButtonImage = UIImage(resource: .addTrackerButton)
         static let imageForEmptyList = UIImage(resource: .imageForEmptyList)
+        static let imageForEmptySearchResult = UIImage(resource: .imageForNoResultSearch)
 
         static let titleFontSize: CGFloat = 34
         static let dateFontSize: CGFloat = 17
@@ -50,10 +52,13 @@ final class TrackersViewController: UIViewController {
         static let collectionItemsPerRow: CGFloat = 2
         static let collectionCellHeight: CGFloat = 148
         static let collectionHeaderHeight: CGFloat = 46
+        
         static let editActionTitle = "Редактировать"
         static let deleteActionTitle = "Удалить"
         static let contextMenuBlurAlpha: CGFloat = 1
         static let zeroInset: CGFloat = 0
+        static let deleteAlertTitle = "Уверены что хотите удалить трекер?"
+        static let cancelActionTitle = "Отменить"
     }
 
     // MARK: - Lifecycle
@@ -63,8 +68,10 @@ final class TrackersViewController: UIViewController {
         setupViews()
         setupHeaderSubviews()
         setupEmptyStateSubviews()
+        setupEmptyStateSearchSubviews()
         setupHeaderLayout()
         setupEmptyStateLayout()
+        setupEmptyStateSearchLayout()
         setupStores()
         loadDataFromCoreData()
     }
@@ -163,6 +170,31 @@ final class TrackersViewController: UIViewController {
         return label
     }()
     
+    private lazy var emptyStateSearchView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+    
+    private lazy var emptyStateSearchImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = Constants.imageForEmptySearchResult
+        return imageView
+    }()
+    
+    private lazy var emptyStateSearchLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = Constants.emptyStateSearchText
+        label.font = UIFont.systemFont(ofSize: Constants.emptyStateFontSize, weight: .medium)
+        label.textColor = .ypBlack
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
+    }()
+    
     private lazy var searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.translatesAutoresizingMaskIntoConstraints = false
@@ -228,6 +260,7 @@ final class TrackersViewController: UIViewController {
     private var selectedDate: Date = Date()
     private var isEmptyStateVisible: Bool = true
     private var contextMenuBlurView: UIVisualEffectView?
+    private var pendingTrackerToDelete: Tracker?
     var categories: [TrackerCategory] = []
     var completedTrackers: [TrackerRecord] = []
     private var visibleCategories: [TrackerCategory] = []
@@ -262,6 +295,7 @@ private extension TrackersViewController {
         view.addSubview(headerView)
         view.addSubview(emptyStateView)
         view.addSubview(collectionView)
+        view.addSubview(emptyStateSearchView)
     }
 
     func setupHeaderSubviews() {
@@ -276,6 +310,11 @@ private extension TrackersViewController {
     func setupEmptyStateSubviews() {
         emptyStateView.addSubview(emptyStateImageView)
         emptyStateView.addSubview(emptyStateLabel)
+    }
+    
+    func setupEmptyStateSearchSubviews() {
+        emptyStateSearchView.addSubview(emptyStateSearchImageView)
+        emptyStateSearchView.addSubview(emptyStateSearchLabel)
     }
 
     // MARK: - Setup Layout
@@ -330,6 +369,21 @@ private extension TrackersViewController {
 
             emptyStateLabel.topAnchor.constraint(equalTo: emptyStateImageView.bottomAnchor, constant: Constants.emptyStateLabelVerticalInset),
             emptyStateLabel.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
+        ])
+    }
+
+    func setupEmptyStateSearchLayout() {
+        NSLayoutConstraint.activate([
+            emptyStateSearchView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            emptyStateSearchView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyStateSearchView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyStateSearchView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
+            emptyStateSearchImageView.centerXAnchor.constraint(equalTo: emptyStateSearchView.centerXAnchor),
+            emptyStateSearchImageView.centerYAnchor.constraint(equalTo: emptyStateSearchView.centerYAnchor),
+
+            emptyStateSearchLabel.topAnchor.constraint(equalTo: emptyStateSearchImageView.bottomAnchor, constant: Constants.emptyStateLabelVerticalInset),
+            emptyStateSearchLabel.centerXAnchor.constraint(equalTo: emptyStateSearchView.centerXAnchor),
         ])
     }
 
@@ -437,7 +491,58 @@ private extension TrackersViewController {
     // MARK: - Context Menu
 
     private func editTracker(_ tracker: Tracker) {
-        print("Edit tracker:", tracker.title)
+        let viewController = CreateTrackerViewController(type: tracker.type)
+        viewController.configureForEditing(
+            tracker,
+            categoryTitle: categoryTitle(for: tracker)
+        )
+
+        viewController.onTrackerUpdated = { [weak self] updatedTracker in
+            self?.updateTracker(updatedTracker)
+        }
+
+        let navigationController = UINavigationController(rootViewController: viewController)
+        present(navigationController, animated: true)
+    }
+
+    private func showDeleteConfirmation(for tracker: Tracker) {
+        view.window?.endEditing(true)
+
+        let alert = UIAlertController(
+            title: Constants.deleteAlertTitle,
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+
+        let deleteAction = UIAlertAction(
+            title: Constants.deleteActionTitle,
+            style: .destructive
+        ) { [weak self] _ in
+            self?.deleteTracker(tracker)
+        }
+
+        let cancelAction = UIAlertAction(
+            title: Constants.cancelActionTitle,
+            style: .cancel
+        )
+
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+
+        present(alert, animated: true)
+    }
+
+    private func requestDeleteConfirmation(for tracker: Tracker) {
+        pendingTrackerToDelete = tracker
+    }
+
+    private func presentPendingDeleteConfirmationIfNeeded() {
+        guard let tracker = pendingTrackerToDelete else {
+            return
+        }
+
+        pendingTrackerToDelete = nil
+        showDeleteConfirmation(for: tracker)
     }
 
     private func deleteTracker(_ tracker: Tracker) {
@@ -447,6 +552,21 @@ private extension TrackersViewController {
         } catch {
             assertionFailure("Failed to delete tracker: \(error)")
         }
+    }
+    
+    private func updateTracker(_ tracker: Tracker) {
+        do {
+            try trackerStore.updateTracker(tracker)
+            loadDataFromCoreData()
+        } catch {
+            assertionFailure("Failed to update tracker: \(error)")
+        }
+    }
+
+    private func categoryTitle(for tracker: Tracker) -> String {
+        categories.first { category in
+            category.trackers.contains { $0.id == tracker.id }
+        }?.title ?? Constants.importantCategoryTitle
     }
 
     private func prepareContextMenuBlur() {
@@ -587,7 +707,7 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
                 title: Constants.deleteActionTitle,
                 attributes: .destructive
             ) { _ in
-                self?.deleteTracker(tracker)
+                self?.requestDeleteConfirmation(for: tracker)
             }
             
             return UIMenu(children: [editAction, deleteAction])
@@ -599,8 +719,8 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
         willDisplayContextMenu configuration: UIContextMenuConfiguration,
         animator: UIContextMenuInteractionAnimating?
     ) {
+        view.window?.endEditing(true)
         prepareContextMenuBlur()
-
         animator?.addAnimations { [weak self] in
             self?.showPreparedContextMenuBlur()
         }
@@ -617,6 +737,7 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
 
         animator?.addCompletion { [weak self] in
             self?.removeContextMenuBlur()
+            self?.presentPendingDeleteConfirmationIfNeeded()
         }
     }
     

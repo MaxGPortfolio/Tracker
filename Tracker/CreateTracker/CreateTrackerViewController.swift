@@ -59,6 +59,10 @@ final class CreateTrackerViewController: UIViewController {
         static let colorSectionTitle = "Цвет"
         
         static let zeroInset: CGFloat = 0
+        
+        static let screenTitleHabitEdit = "Редактирование привычки"
+        static let screenTitleIrregularEventEdit = "Редактирование нерегулярного события"
+        static let saveButtonTitle = "Сохранить"
     }
     
     // MARK: - Mock data
@@ -103,6 +107,8 @@ final class CreateTrackerViewController: UIViewController {
     private var selectedColor: UIColor?
     private var selectedEmojiIndexPath: IndexPath?
     private var selectedColorIndexPath: IndexPath?
+    private var editingTrackerId: UUID?
+    private var editingTrackerCreationDate: Date?
     
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -251,6 +257,8 @@ final class CreateTrackerViewController: UIViewController {
     
     var onTrackerCreated: ((Tracker, String) -> Void)?
     
+    var onTrackerUpdated: ((Tracker) -> Void)?
+    
     // MARK: - Init
     
     init(type: TrackerCreationType) {
@@ -271,9 +279,15 @@ final class CreateTrackerViewController: UIViewController {
     // MARK: - Computed Properties
 
     private var screenTitle: String {
-        switch type {
-        case .habit: Constants.screenTitleHabit
-        case .irregularEvent: Constants.screenTitleIrregularEvent
+        switch (type, editingTrackerId != nil) {
+        case (.habit, true):
+            return Constants.screenTitleHabitEdit
+        case (.irregularEvent, true):
+            return Constants.screenTitleIrregularEventEdit
+        case (.habit, false):
+            return Constants.screenTitleHabit
+        case (.irregularEvent, false):
+            return Constants.screenTitleIrregularEvent
         }
     }
     
@@ -300,10 +314,78 @@ final class CreateTrackerViewController: UIViewController {
         )
         navigationItem.hidesBackButton = true
         textField.delegate = self
+        setupKeyboardDismissGesture()
+        applyEditingStateIfNeeded()
         updateCreateButtonState()
     }
     
+    func configureForEditing(
+        _ tracker: Tracker,
+        categoryTitle: String
+    ) {
+        editingTrackerId = tracker.id
+        editingTrackerCreationDate = tracker.creationDate
+        trackerTitle = tracker.title
+        selectedCategory = categoryTitle
+        selectedSchedule = tracker.type == .habit ? tracker.schedule : []
+        selectedEmoji = tracker.emoji
+        selectedColor = tracker.color
+
+        selectedEmojiIndexPath = MockData.emojis.firstIndex(of: tracker.emoji).map {
+            IndexPath(item: $0, section: CollectionSection.emoji.rawValue)
+        }
+
+        selectedColorIndexPath = MockData.trackerColors.firstIndex(where: {
+            $0.isEqualToColor(tracker.color)
+        }).map {
+            IndexPath(item: $0, section: CollectionSection.color.rawValue)
+        }
+    }
+    
     // MARK: - Private Methods
+    
+    private func applyEditingStateIfNeeded() {
+        guard editingTrackerId != nil else {
+            return
+        }
+
+        titleLabel.text = screenTitle
+        textField.text = trackerTitle
+        createButton.setTitle(Constants.saveButtonTitle, for: .normal)
+        tableView.reloadData()
+        collectionView.reloadData()
+
+        if let selectedEmojiIndexPath {
+            collectionView.selectItem(
+                at: selectedEmojiIndexPath,
+                animated: false,
+                scrollPosition: []
+            )
+        }
+
+        if let selectedColorIndexPath {
+            collectionView.selectItem(
+                at: selectedColorIndexPath,
+                animated: false,
+                scrollPosition: []
+            )
+        }
+    }
+    
+    private func setupKeyboardDismissGesture() {
+        let tapGesture = UITapGestureRecognizer(
+            target: self,
+            action: #selector(dismissKeyboard)
+        )
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+        
+        scrollView.keyboardDismissMode = .onDrag
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
     
     private func updateCreateButtonState() {
         let isTitleValid = !trackerTitle.isEmpty
@@ -341,17 +423,23 @@ final class CreateTrackerViewController: UIViewController {
               let selectedColor else {
             return
         }
-        
+
         let tracker = Tracker(
-            id: UUID(),
+            id: editingTrackerId ?? UUID(),
             title: trackerTitle,
             color: selectedColor,
             emoji: selectedEmoji,
             schedule: type == .habit ? selectedSchedule : Weekday.allCases,
-            creationDate: Date()
+            creationDate: editingTrackerCreationDate ?? Date(),
+            type: type
         )
-        
-        onTrackerCreated?(tracker, selectedCategory)
+
+        if editingTrackerId == nil {
+            onTrackerCreated?(tracker, selectedCategory)
+        } else {
+            onTrackerUpdated?(tracker)
+        }
+
         dismiss(animated: true)
     }
 }
@@ -708,5 +796,32 @@ extension CreateTrackerViewController: UICollectionViewDelegateFlowLayout {
         referenceSizeForHeaderInSection section: Int
     ) -> CGSize {
         CGSize(width: collectionView.bounds.width, height: Constants.collectionHeaderHeight)
+    }
+}
+
+private extension UIColor {
+    func isEqualToColor(_ color: UIColor) -> Bool {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        var comparedRed: CGFloat = 0
+        var comparedGreen: CGFloat = 0
+        var comparedBlue: CGFloat = 0
+        var comparedAlpha: CGFloat = 0
+
+        getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        color.getRed(
+            &comparedRed,
+            green: &comparedGreen,
+            blue: &comparedBlue,
+            alpha: &comparedAlpha
+        )
+
+        return red == comparedRed &&
+            green == comparedGreen &&
+            blue == comparedBlue &&
+            alpha == comparedAlpha
     }
 }
