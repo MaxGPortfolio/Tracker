@@ -14,6 +14,8 @@ final class TabBarController: UITabBarController {
     private enum Constants {
         static let trackersTabImage = UIImage(resource: .trackersItem)
         static let statsTabImage = UIImage(resource: .statsItem)
+        static let trackersNavTitle = String(localized: "tabBar.Trackers.Title")
+        static let statsNavTitle = String(localized: "tabBar.Stats.Title")
     }
     
     // MARK: - Lifecycle
@@ -35,13 +37,13 @@ final class TabBarController: UITabBarController {
         let statsNav = UINavigationController(rootViewController: statsListVC)
         
         trackersNav.tabBarItem = UITabBarItem(
-            title: "Трекеры",
+            title: Constants.trackersNavTitle,
             image: Constants.trackersTabImage,
             selectedImage: nil
         )
         
         statsNav.tabBarItem = UITabBarItem(
-            title: "Статистика",
+            title: Constants.statsNavTitle,
             image: Constants.statsTabImage,
             selectedImage: nil
         )

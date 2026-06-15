@@ -79,6 +79,52 @@ final class TrackerCategoryStore: NSObject {
         
         return category
     }
+
+    func updateCategory(oldTitle: String, newTitle: String) throws {
+        guard let category = try categoryCoreData(with: oldTitle) else {
+            return
+        }
+
+        category.title = newTitle
+        try context.save()
+    }
+
+    func deleteCategory(with title: String) throws {
+        guard let category = try categoryCoreData(with: title) else {
+            return
+        }
+
+        let trackers = category.trackers as? Set<TrackerCoreData> ?? []
+        trackers.forEach { tracker in
+            tracker.category = nil
+        }
+
+        context.delete(category)
+        try context.save()
+    }
+    
+    func categoryExists(with title: String) -> Bool {
+        do {
+            return try categoryCoreData(with: title) != nil
+        } catch {
+            assertionFailure("Failed to check category existence: \(error)")
+            return false
+        }
+    }
+    
+    func hasTrackers(inCategoryWith title: String) -> Bool {
+        do {
+            guard let category = try categoryCoreData(with: title) else {
+                return false
+            }
+
+            let trackers = category.trackers as? Set<TrackerCoreData> ?? []
+            return !trackers.isEmpty
+        } catch {
+            assertionFailure("Failed to check category trackers: \(error)")
+            return false
+        }
+    }
     
     func fetchTrackerCategories() -> [TrackerCategory] {
         let categories = fetchedCategories()
@@ -103,7 +149,8 @@ final class TrackerCategoryStore: NSObject {
                     color: decodeColor(trackerCoreData.color),
                     emoji: emoji,
                     schedule: decodeSchedule(scheduleString),
-                    creationDate: creationDate
+                    creationDate: creationDate,
+                    type: TrackerCreationType(rawValue: trackerCoreData.type ?? "") ?? .habit
                 )
             }
             return TrackerCategory(
@@ -114,6 +161,13 @@ final class TrackerCategoryStore: NSObject {
     }
     
     // MARK: - Private Helpers
+
+    private func categoryCoreData(with title: String) throws -> TrackerCategoryCoreData? {
+        let request = TrackerCategoryCoreData.fetchRequest()
+        request.predicate = NSPredicate(format: "title == %@", title)
+        request.fetchLimit = 1
+        return try context.fetch(request).first
+    }
 
     private func decodeSchedule(_ scheduleString: String) -> [Weekday] {
         scheduleString

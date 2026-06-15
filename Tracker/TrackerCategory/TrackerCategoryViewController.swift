@@ -14,6 +14,12 @@ final class TrackerCategoryViewController: UIViewController {
     private enum Constants {
         static let screenTitle = "Категория"
         static let addCategoryButtonTitle = "Добавить категорию"
+        static let editActionTitle = "Редактировать"
+        static let deleteActionTitle = "Удалить"
+        static let deleteAlertTitle = "Эта категория точно не нужна?"
+        static let cancelActionTitle = "Отменить"
+        static let contextMenuBlurAlpha: CGFloat = 1
+        static let zeroInset: CGFloat = 0
         static let emptyStateText = "Привычки и события можно объединить по смыслу"
         static let emptyStateImage = UIImage(resource: .imageForEmptyList)
 
@@ -36,6 +42,9 @@ final class TrackerCategoryViewController: UIViewController {
 
     private let viewModel: TrackerCategoryViewModel
     private var tableViewHeightConstraint: NSLayoutConstraint?
+    private let categoryStore = TrackerCategoryStore()
+    private var contextMenuBlurView: UIVisualEffectView?
+    private var pendingCategoryToDelete: String?
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -171,6 +180,55 @@ extension TrackerCategoryViewController: UITableViewDelegate {
     ) {
         viewModel.selectCategory(at: indexPath.row)
     }
+
+    func tableView(
+        _ tableView: UITableView,
+        contextMenuConfigurationForRowAt indexPath: IndexPath,
+        point: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        let categoryTitle = viewModel.categoryTitle(at: indexPath.row)
+
+        return UIContextMenuConfiguration(identifier: indexPath as NSCopying, previewProvider: nil) { [weak self] _ in
+            let editAction = UIAction(title: Constants.editActionTitle) { _ in
+                self?.editCategory(with: categoryTitle)
+            }
+
+            let deleteAction = UIAction(
+                title: Constants.deleteActionTitle,
+                attributes: .destructive
+            ) { _ in
+                self?.requestDeleteConfirmation(for: categoryTitle)
+            }
+
+            return UIMenu(children: [editAction, deleteAction])
+        }
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        willDisplayContextMenu configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        prepareContextMenuBlur()
+        animator?.addAnimations { [weak self] in
+            self?.showPreparedContextMenuBlur()
+        }
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        willEndContextMenuInteraction configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        animator?.addAnimations { [weak self] in
+            self?.hideContextMenuBlur()
+        }
+
+        animator?.addCompletion { [weak self] in
+            self?.removeContextMenuBlur()
+            self?.presentPendingDeleteConfirmationIfNeeded()
+        }
+    }
 }
 
 // MARK: - Setup
@@ -248,5 +306,102 @@ private extension TrackerCategoryViewController {
         }
 
         navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    func editCategory(with title: String) {
+        let viewController = CreateCategoryViewController()
+        viewController.configureForEditing(with: title)
+
+        viewController.onCategoryUpdated = { [weak self] newTitle in
+            self?.updateCategory(oldTitle: title, newTitle: newTitle)
+        }
+
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    func updateCategory(oldTitle: String, newTitle: String) {
+        do {
+            try categoryStore.updateCategory(oldTitle: oldTitle, newTitle: newTitle)
+            viewModel.loadCategories()
+        } catch {
+            assertionFailure("Failed to update category: \(error)")
+        }
+    }
+
+    func requestDeleteConfirmation(for title: String) {
+        pendingCategoryToDelete = title
+    }
+
+    func presentPendingDeleteConfirmationIfNeeded() {
+        guard let title = pendingCategoryToDelete else {
+            return
+        }
+
+        pendingCategoryToDelete = nil
+        showDeleteConfirmation(for: title)
+    }
+
+    func showDeleteConfirmation(for title: String) {
+        let alert = UIAlertController(
+            title: Constants.deleteAlertTitle,
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+
+        let deleteAction = UIAlertAction(
+            title: Constants.deleteActionTitle,
+            style: .destructive
+        ) { [weak self] _ in
+            self?.deleteCategory(with: title)
+        }
+
+        let cancelAction = UIAlertAction(
+            title: Constants.cancelActionTitle,
+            style: .cancel
+        )
+
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        present(alert, animated: true)
+    }
+
+    func deleteCategory(with title: String) {
+        do {
+            try categoryStore.deleteCategory(with: title)
+            viewModel.loadCategories()
+        } catch {
+            assertionFailure("Failed to delete category: \(error)")
+        }
+    }
+
+    func prepareContextMenuBlur() {
+        guard contextMenuBlurView == nil,
+              let window = view.window
+        else {
+            return
+        }
+
+        let blurEffect = UIBlurEffect(style: .regular)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.frame = window.bounds
+        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        blurView.alpha = Constants.zeroInset
+        blurView.isUserInteractionEnabled = false
+
+        window.addSubview(blurView)
+        contextMenuBlurView = blurView
+    }
+
+    func showPreparedContextMenuBlur() {
+        contextMenuBlurView?.alpha = Constants.contextMenuBlurAlpha
+    }
+
+    func hideContextMenuBlur() {
+        contextMenuBlurView?.alpha = Constants.zeroInset
+    }
+
+    func removeContextMenuBlur() {
+        contextMenuBlurView?.removeFromSuperview()
+        contextMenuBlurView = nil
     }
 }

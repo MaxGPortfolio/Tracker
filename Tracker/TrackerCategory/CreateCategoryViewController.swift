@@ -37,6 +37,8 @@ final class CreateCategoryViewController: UIViewController {
             updateDoneButtonState()
         }
     }
+    
+    private var isEditingCategory = false
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -87,14 +89,50 @@ final class CreateCategoryViewController: UIViewController {
     // MARK: - Public Properties
 
     var onCategoryCreated: ((String) -> Void)?
+    var onCategoryUpdated: ((String) -> Void)?
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        titleTextField.delegate = self
+        applyEditingStateIfNeeded()
 
         setupViews()
         setupLayout()
+        updateDoneButtonState()
+        setupKeyboardDismissGesture()
+    }
+    
+    // MARK: - Public
+    
+    func configureForEditing(with title: String) {
+        isEditingCategory = true
+        categoryTitle = title
+    }
+    
+    // MARK: - Private Methods
+
+    private func setupKeyboardDismissGesture() {
+        let tapGesture = UITapGestureRecognizer(
+            target: self,
+            action: #selector(dismissKeyboard)
+        )
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
+    private func applyEditingStateIfNeeded() {
+        guard isEditingCategory else {
+            return
+        }
+
+        titleTextField.text = categoryTitle
         updateDoneButtonState()
     }
 }
@@ -106,12 +144,13 @@ private extension CreateCategoryViewController {
 
     func doneButtonTapped() {
         let trimmedTitle = categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmedTitle.isEmpty else {
-            return
+        
+        if isEditingCategory {
+            onCategoryUpdated?(trimmedTitle)
+        } else {
+            onCategoryCreated?(trimmedTitle)
         }
-
-        onCategoryCreated?(trimmedTitle)
+        
         navigationController?.popViewController(animated: true)
     }
 }
@@ -151,4 +190,10 @@ private extension CreateCategoryViewController {
     }
 }
 
+extension CreateCategoryViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+}
 

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AppMetricaCore
 
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -23,5 +24,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         )
         sceneConfiguration.delegateClass = SceneDelegate.self
         return sceneConfiguration
+    }
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        if let configuration = AppMetricaConfiguration(apiKey: "99cbddf1-ef4e-4cbb-bfb6-65fb47d91642") {
+            configuration.areLogsEnabled = true
+            AppMetrica.activate(with: configuration)
+        }
+        return true
     }
 }

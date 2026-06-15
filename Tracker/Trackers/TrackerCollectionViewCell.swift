@@ -121,6 +121,36 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     
     // MARK: - Public
     
+    func makeContextMenuPreview() -> UITargetedPreview {
+        layoutIfNeeded()
+
+        let previewView = cardView.snapshotView(afterScreenUpdates: false) ?? UIView()
+        previewView.frame = cardView.bounds
+        previewView.layer.cornerRadius = Constants.cardCornerRadius
+        previewView.clipsToBounds = true
+
+        let previewPath = UIBezierPath(
+            roundedRect: previewView.bounds,
+            cornerRadius: Constants.cardCornerRadius
+        )
+
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = previewPath
+        parameters.shadowPath = UIBezierPath()
+
+        let target = UIPreviewTarget(
+            container: contentView,
+            center: cardView.center
+        )
+
+        return UITargetedPreview(
+            view: previewView,
+            parameters: parameters,
+            target: target
+        )
+    }
+    
     func configure(
         with tracker: Tracker,
         isCompleted: Bool,
@@ -129,7 +159,9 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     ) {
         emojiLabel.text = tracker.emoji
         titleLabel.text = tracker.title
-        countLabel.text = daysText(for: completedDays)
+        
+        let format = String(localized: "trackers.screen.cell.completedDays")
+        countLabel.text = String.localizedStringWithFormat(format, completedDays)
 
         cardView.backgroundColor = tracker.color
         plusBackgroundView.backgroundColor = tracker.color
@@ -145,26 +177,6 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
         plusButton.isUserInteractionEnabled = isButtonEnabled
         plusBackgroundView.alpha = isButtonEnabled ? 1.0 : 0.5
         plusButton.alpha = isButtonEnabled ? 1.0 : 0.5
-    }
-    
-    // MARK: - Private Methods
-    
-    private func daysText(for count: Int) -> String {
-        let lastTwoDigits = count % 100
-        let lastDigit = count % 10
-
-        if lastTwoDigits >= 11 && lastTwoDigits <= 14 {
-            return "\(count) дней"
-        }
-
-        switch lastDigit {
-        case 1:
-            return "\(count) день"
-        case 2...4:
-            return "\(count) дня"
-        default:
-            return "\(count) дней"
-        }
     }
 }
 

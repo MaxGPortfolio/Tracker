@@ -12,7 +12,7 @@ final class OnboardingContentViewController: UIViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let buttonTitle = "Вот это технологии!"
+        static let buttonTitle = String(localized: "onboarding.screen.buttonTitle")
 
         static let titleFontSize: CGFloat = 32
         static let buttonFontSize: CGFloat = 16

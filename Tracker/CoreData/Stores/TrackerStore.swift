@@ -39,6 +39,7 @@ final class TrackerStore: NSObject {
         trackerCoreData.emoji = tracker.emoji
         trackerCoreData.schedule = encodeSchedule(tracker.schedule)
         trackerCoreData.creationDate = tracker.creationDate
+        trackerCoreData.type = tracker.type.rawValue
         trackerCoreData.category = category
         
         try context.save()
@@ -49,6 +50,40 @@ final class TrackerStore: NSObject {
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         request.fetchLimit = 1
         return try context.fetch(request).first
+    }
+
+    func deleteTracker(with id: UUID) throws {
+        guard let tracker = try trackerCoreData(with: id) else {
+            return
+        }
+
+        let recordRequest = TrackerRecordCoreData.fetchRequest()
+        recordRequest.predicate = NSPredicate(format: "tracker == %@", tracker)
+
+        let records = try context.fetch(recordRequest)
+
+        records.forEach { record in
+            context.delete(record)
+        }
+
+        context.delete(tracker)
+        try context.save()
+    }
+    
+    func updateTracker(_ tracker: Tracker, to category: TrackerCategoryCoreData) throws {
+        guard let trackerCoreData = try trackerCoreData(with: tracker.id) else {
+            return
+        }
+
+        trackerCoreData.title = tracker.title
+        trackerCoreData.color = encodeColor(tracker.color)
+        trackerCoreData.emoji = tracker.emoji
+        trackerCoreData.schedule = encodeSchedule(tracker.schedule)
+        trackerCoreData.creationDate = tracker.creationDate
+        trackerCoreData.type = tracker.type.rawValue
+        trackerCoreData.category = category
+
+        try context.save()
     }
     
     func setupFetchedResultsController() throws {
