@@ -70,7 +70,7 @@ final class TrackerStore: NSObject {
         try context.save()
     }
     
-    func updateTracker(_ tracker: Tracker) throws {
+    func updateTracker(_ tracker: Tracker, to category: TrackerCategoryCoreData) throws {
         guard let trackerCoreData = try trackerCoreData(with: tracker.id) else {
             return
         }
@@ -81,6 +81,7 @@ final class TrackerStore: NSObject {
         trackerCoreData.schedule = encodeSchedule(tracker.schedule)
         trackerCoreData.creationDate = tracker.creationDate
         trackerCoreData.type = tracker.type.rawValue
+        trackerCoreData.category = category
 
         try context.save()
     }

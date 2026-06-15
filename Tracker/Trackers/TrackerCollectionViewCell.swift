@@ -159,7 +159,9 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
     ) {
         emojiLabel.text = tracker.emoji
         titleLabel.text = tracker.title
-        countLabel.text = daysText(for: completedDays)
+        
+        let format = String(localized: "trackers.screen.cell.completedDays")
+        countLabel.text = String.localizedStringWithFormat(format, completedDays)
 
         cardView.backgroundColor = tracker.color
         plusBackgroundView.backgroundColor = tracker.color
@@ -175,26 +177,6 @@ final class TrackerCollectionViewCell: UICollectionViewCell {
         plusButton.isUserInteractionEnabled = isButtonEnabled
         plusBackgroundView.alpha = isButtonEnabled ? 1.0 : 0.5
         plusButton.alpha = isButtonEnabled ? 1.0 : 0.5
-    }
-    
-    // MARK: - Private Methods
-    
-    private func daysText(for count: Int) -> String {
-        let lastTwoDigits = count % 100
-        let lastDigit = count % 10
-
-        if lastTwoDigits >= 11 && lastTwoDigits <= 14 {
-            return "\(count) дней"
-        }
-
-        switch lastDigit {
-        case 1:
-            return "\(count) день"
-        case 2...4:
-            return "\(count) дня"
-        default:
-            return "\(count) дней"
-        }
     }
 }
 

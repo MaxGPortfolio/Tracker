@@ -12,8 +12,8 @@ final class OnboardingPageViewController: UIPageViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let firstPageTitle = "Отслеживайте только то, что хотите"
-        static let secondPageTitle = "Даже если это не литры воды и йога"
+        static let firstPageTitle = String(localized: "onboarding.screen.firstPageTitle")
+        static let secondPageTitle = String(localized: "onboarding.screen.secondPageTitle")
         static let pageControlBottomInset: CGFloat = 134
     }
 
@@ -149,7 +149,7 @@ private extension OnboardingPageViewController {
     }
 
     func finishOnboarding() {
-        UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
+        UserDefaultsService.shared.hasSeenOnboarding = true
 
         guard let window = view.window else {
             return

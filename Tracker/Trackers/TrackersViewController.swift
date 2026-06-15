@@ -12,11 +12,10 @@ final class TrackersViewController: UIViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let importantCategoryTitle = "Важное"
-        static let screenTitle = "Трекеры"
-        static let emptyStateText = "Что будем отслеживать?"
-        static let emptyStateSearchText = "Ничего не найдено"
-        static let searchPlaceholder = "Поиск"
+        static let screenTitle = String(localized: "trackers.screen.title")
+        static let emptyStateText = String(localized: "trackers.screen.emptyStateText")
+        static let emptyStateSearchText = String(localized: "trackers.screen.emptyStateSearchText")
+        static let searchPlaceholder = String(localized: "trackers.screen.searchPlaceholder")
         static let dateFormat = "dd.MM.yy"
 
         static let addTrackerButtonImage = UIImage(resource: .addTrackerButton)
@@ -52,19 +51,26 @@ final class TrackersViewController: UIViewController {
         static let collectionItemsPerRow: CGFloat = 2
         static let collectionCellHeight: CGFloat = 148
         static let collectionHeaderHeight: CGFloat = 46
+
+        static let filtersButtonTitle = String(localized: "trackers.screen.filtersButtonTitle")
+        static let filtersButtonWidth: CGFloat = 114
+        static let filtersButtonHeight: CGFloat = 50
+        static let filtersButtonBottomInset: CGFloat = 16
+        static let filtersButtonCornerRadius: CGFloat = 16
         
-        static let editActionTitle = "Редактировать"
-        static let deleteActionTitle = "Удалить"
+        static let editActionTitle = String(localized: "trackers.screen.editActionTitle")
+        static let deleteActionTitle = String(localized: "trackers.screen.deleteActionTitle")
         static let contextMenuBlurAlpha: CGFloat = 1
         static let zeroInset: CGFloat = 0
-        static let deleteAlertTitle = "Уверены что хотите удалить трекер?"
-        static let cancelActionTitle = "Отменить"
+        static let deleteAlertTitle = String(localized: "trackers.screen.deleteAlertTitle")
+        static let cancelActionTitle = String(localized: "trackers.screen.cancelActionTitle")
     }
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         setupViews()
         setupHeaderSubviews()
         setupEmptyStateSubviews()
@@ -74,6 +80,25 @@ final class TrackersViewController: UIViewController {
         setupEmptyStateSearchLayout()
         setupStores()
         loadDataFromCoreData()
+        setupKeyboardDismissGesture()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        AnalyticsService.shared.report(
+            event: AnalyticsEvent.open,
+            screen: AnalyticsScreen.main
+        )
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        AnalyticsService.shared.report(
+            event: AnalyticsEvent.close,
+            screen: AnalyticsScreen.main
+        )
     }
 
     // MARK: - Private Properties
@@ -92,6 +117,12 @@ final class TrackersViewController: UIViewController {
         button.tintColor = .ypBlack
         button.addAction(
             UIAction { [weak self] _ in
+                AnalyticsService.shared.report(
+                    event: AnalyticsEvent.click,
+                    screen: AnalyticsScreen.main,
+                    item: AnalyticsItem.addTrack
+                )
+                
                 let viewController = CreateTrackerTypeViewController()
                 
                 viewController.onTrackerCreated = { [weak self] tracker, categoryTitle in
@@ -205,8 +236,10 @@ final class TrackersViewController: UIViewController {
         searchBar.setBackgroundImage(UIImage(), for: .any, barMetrics: .default)
         searchBar.backgroundColor = .ypWhite
         searchBar.barTintColor = .ypWhite
+        searchBar.delegate = self
         
         let textField = searchBar.searchTextField
+        textField.clearButtonMode = .never
         textField.backgroundColor = .ypSearchField
         textField.borderStyle = .none
         textField.layer.cornerRadius = Constants.searchBarCornerRadius
@@ -235,6 +268,9 @@ final class TrackersViewController: UIViewController {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
+        collectionView.keyboardDismissMode = .onDrag
+        collectionView.contentInset.bottom = Constants.filtersButtonHeight + Constants.filtersButtonBottomInset
+        collectionView.verticalScrollIndicatorInsets.bottom = Constants.filtersButtonHeight + Constants.filtersButtonBottomInset
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.register(
@@ -248,6 +284,24 @@ final class TrackersViewController: UIViewController {
         )
         return collectionView
     }()
+
+    private lazy var filtersButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle(Constants.filtersButtonTitle, for: .normal)
+        button.setTitleColor(.whiteFixed, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: Constants.dateFontSize, weight: .regular)
+        button.backgroundColor = .ypBlue
+        button.layer.cornerRadius = Constants.filtersButtonCornerRadius
+        button.clipsToBounds = true
+        button.addAction(
+            UIAction { [weak self] _ in
+                self?.showFilters()
+            },
+            for: .touchUpInside
+        )
+        return button
+    }()
     
     // MARK: - Stores
 
@@ -258,6 +312,8 @@ final class TrackersViewController: UIViewController {
     // MARK: - State
 
     private var selectedDate: Date = Date()
+    private var searchText: String = ""
+    private var selectedFilter: TrackerFilter = FilterStateStorage.selectedFilter
     private var isEmptyStateVisible: Bool = true
     private var contextMenuBlurView: UIVisualEffectView?
     private var pendingTrackerToDelete: Tracker?
@@ -284,6 +340,19 @@ final class TrackersViewController: UIViewController {
             assertionFailure("Failed to add tracker: \(nsError)")
         }
     }
+    
+    private func setupKeyboardDismissGesture() {
+        let tapGesture = UITapGestureRecognizer(
+            target: self,
+            action: #selector(dismissKeyboard)
+        )
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
 }
 
 // MARK: - Setup Views
@@ -296,6 +365,7 @@ private extension TrackersViewController {
         view.addSubview(emptyStateView)
         view.addSubview(collectionView)
         view.addSubview(emptyStateSearchView)
+        view.addSubview(filtersButton)
     }
 
     func setupHeaderSubviews() {
@@ -354,6 +424,11 @@ private extension TrackersViewController {
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
+            filtersButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            filtersButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.filtersButtonBottomInset),
+            filtersButton.widthAnchor.constraint(equalToConstant: Constants.filtersButtonWidth),
+            filtersButton.heightAnchor.constraint(equalToConstant: Constants.filtersButtonHeight),
         ])
     }
 
@@ -419,27 +494,104 @@ private extension TrackersViewController {
     // MARK: - State Updates
 
     func updateEmptyState() {
-        emptyStateView.isHidden = !isEmptyStateVisible
-        collectionView.isHidden = isEmptyStateVisible
+        let isSearchActive = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let isVisibleCategoriesEmpty = visibleCategories.isEmpty
+
+        emptyStateView.isHidden = !isVisibleCategoriesEmpty || isSearchActive
+        emptyStateSearchView.isHidden = !isVisibleCategoriesEmpty || !isSearchActive
+        collectionView.isHidden = isVisibleCategoriesEmpty
     }
 
     func updateVisibleCategories() {
         let selectedWeekday = weekday(from: selectedDate)
+        let normalizedSearchText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+
         visibleCategories = categories.compactMap { category in
             let trackers = category.trackers.filter { tracker in
-                tracker.schedule.contains(selectedWeekday)
+                let isScheduledForSelectedDate = tracker.schedule.contains(selectedWeekday)
+                let matchesSearchText = normalizedSearchText.isEmpty ||
+                    tracker.title.localizedCaseInsensitiveContains(normalizedSearchText)
+                let matchesSelectedFilter = shouldShowTrackerBySelectedFilter(tracker)
+
+                return isScheduledForSelectedDate && matchesSearchText && matchesSelectedFilter
             }
+
             guard !trackers.isEmpty else {
                 return nil
             }
+
             return TrackerCategory(
                 title: category.title,
                 trackers: trackers
             )
         }
+
         isEmptyStateVisible = visibleCategories.isEmpty
         updateEmptyState()
+        updateFiltersButtonVisibility()
         collectionView.reloadData()
+    }
+
+    private func shouldShowTrackerBySelectedFilter(_ tracker: Tracker) -> Bool {
+        switch selectedFilter {
+        case .all, .today:
+            return true
+        case .completed:
+            return isTrackerCompleted(tracker, on: selectedDate)
+        case .notCompleted:
+            return !isTrackerCompleted(tracker, on: selectedDate)
+        }
+    }
+
+    private func applyFilter(_ filter: TrackerFilter) {
+        switch filter {
+        case .all:
+            selectedFilter = .all
+        case .today:
+            selectedFilter = .today
+            selectedDate = Date()
+            datePicker.date = selectedDate
+            dateLabel.text = dateFormatter.string(from: selectedDate)
+        case .completed, .notCompleted:
+            selectedFilter = filter
+        }
+
+        FilterStateStorage.selectedFilter = selectedFilter
+        updateVisibleCategories()
+    }
+
+    private func showFilters() {
+        AnalyticsService.shared.report(
+            event: AnalyticsEvent.click,
+            screen: AnalyticsScreen.main,
+            item: AnalyticsItem.filter
+        )
+        
+        let viewController = FiltersViewController(selectedFilter: selectedFilterForDisplay())
+        viewController.onFilterSelected = { [weak self] filter in
+            self?.applyFilter(filter)
+        }
+
+        let navigationController = UINavigationController(rootViewController: viewController)
+        present(navigationController, animated: true)
+    }
+    
+    private func selectedFilterForDisplay() -> TrackerFilter {
+        selectedFilter
+    }
+
+    private func updateFiltersButtonVisibility() {
+        filtersButton.isHidden = !hasScheduledTrackersForSelectedDate()
+    }
+
+    private func hasScheduledTrackersForSelectedDate() -> Bool {
+        let selectedWeekday = weekday(from: selectedDate)
+
+        return categories.contains { category in
+            category.trackers.contains { tracker in
+                tracker.schedule.contains(selectedWeekday)
+            }
+        }
     }
 
     // MARK: - Actions
@@ -447,6 +599,12 @@ private extension TrackersViewController {
     @objc private func datePickerValueChanged(_ sender: UIDatePicker) {
         selectedDate = sender.date
         dateLabel.text = dateFormatter.string(from: sender.date)
+
+        if selectedFilter == .today {
+            selectedFilter = .all
+            FilterStateStorage.selectedFilter = selectedFilter
+        }
+
         updateVisibleCategories()
     }
 
@@ -491,14 +649,28 @@ private extension TrackersViewController {
     // MARK: - Context Menu
 
     private func editTracker(_ tracker: Tracker) {
+        AnalyticsService.shared.report(
+            event: AnalyticsEvent.click,
+            screen: AnalyticsScreen.main,
+            item: AnalyticsItem.edit
+        )
+        
+        guard let categoryTitle = categoryTitle(for: tracker) else {
+            return
+        }
+
         let viewController = CreateTrackerViewController(type: tracker.type)
         viewController.configureForEditing(
             tracker,
-            categoryTitle: categoryTitle(for: tracker)
+            categoryTitle: categoryTitle
         )
+        
+        viewController.onTrackerCreated = { [weak self] tracker, categoryTitle in
+            self?.addTracker(tracker, to: categoryTitle)
+        }
 
-        viewController.onTrackerUpdated = { [weak self] updatedTracker in
-            self?.updateTracker(updatedTracker)
+        viewController.onTrackerUpdated = { [weak self] updatedTracker, categoryTitle in
+            self?.updateTracker(updatedTracker, to: categoryTitle)
         }
 
         let navigationController = UINavigationController(rootViewController: viewController)
@@ -546,6 +718,12 @@ private extension TrackersViewController {
     }
 
     private func deleteTracker(_ tracker: Tracker) {
+        AnalyticsService.shared.report(
+            event: AnalyticsEvent.click,
+            screen: AnalyticsScreen.main,
+            item: AnalyticsItem.delete
+        )
+        
         do {
             try trackerStore.deleteTracker(with: tracker.id)
             loadDataFromCoreData()
@@ -554,19 +732,20 @@ private extension TrackersViewController {
         }
     }
     
-    private func updateTracker(_ tracker: Tracker) {
+    private func updateTracker(_ tracker: Tracker, to categoryTitle: String) {
         do {
-            try trackerStore.updateTracker(tracker)
+            let category = try categoryStore.getOrCreateCategory(with: categoryTitle)
+            try trackerStore.updateTracker(tracker, to: category)
             loadDataFromCoreData()
         } catch {
             assertionFailure("Failed to update tracker: \(error)")
         }
     }
 
-    private func categoryTitle(for tracker: Tracker) -> String {
+    private func categoryTitle(for tracker: Tracker) -> String? {
         categories.first { category in
             category.trackers.contains { $0.id == tracker.id }
-        }?.title ?? Constants.importantCategoryTitle
+        }?.title
     }
 
     private func prepareContextMenuBlur() {
@@ -661,6 +840,11 @@ extension TrackersViewController: UICollectionViewDataSource {
             canComplete: canComplete
         )
         cell.onCompleteButtonTap = { [weak self] in
+            AnalyticsService.shared.report(
+                event: AnalyticsEvent.click,
+                screen: AnalyticsScreen.main,
+                item: AnalyticsItem.track
+            )
             self?.toggleTrackerCompletion(tracker)
         }
         return cell
@@ -815,4 +999,38 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
         
         return cell.makeContextMenuPreview()
     }
+}
+
+
+// MARK: - UISearchBarDelegate
+
+extension TrackersViewController: UISearchBarDelegate {
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.setShowsCancelButton(true, animated: true)
+        searchBar.setValue(Constants.cancelActionTitle, forKey: "cancelButtonText")
+    }
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        self.searchText = searchText
+        updateVisibleCategories()
+    }
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = nil
+        searchText = ""
+        searchBar.setShowsCancelButton(false, animated: true)
+        searchBar.resignFirstResponder()
+        updateVisibleCategories()
+    }
+}
+
+
+// MARK: - Filter State Storage
+
+private enum FilterStateStorage {
+    static var selectedFilter: TrackerFilter = .all
 }

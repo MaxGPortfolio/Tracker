@@ -99,6 +99,7 @@ final class CreateTrackerViewController: UIViewController {
     // MARK: - Private Properties
     
     private let type: TrackerCreationType
+    private let categoryStore = TrackerCategoryStore()
     
     private var trackerTitle: String = ""
     private var selectedCategory: String?
@@ -256,8 +257,7 @@ final class CreateTrackerViewController: UIViewController {
     // MARK: - Public Properties
     
     var onTrackerCreated: ((Tracker, String) -> Void)?
-    
-    var onTrackerUpdated: ((Tracker) -> Void)?
+    var onTrackerUpdated: ((Tracker, String) -> Void)?
     
     // MARK: - Init
     
@@ -317,6 +317,11 @@ final class CreateTrackerViewController: UIViewController {
         setupKeyboardDismissGesture()
         applyEditingStateIfNeeded()
         updateCreateButtonState()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        validateSelectedCategory()
     }
     
     func configureForEditing(
@@ -437,10 +442,28 @@ final class CreateTrackerViewController: UIViewController {
         if editingTrackerId == nil {
             onTrackerCreated?(tracker, selectedCategory)
         } else {
-            onTrackerUpdated?(tracker)
+            onTrackerUpdated?(tracker, selectedCategory)
         }
 
         dismiss(animated: true)
+    }
+    
+    private func validateSelectedCategory() {
+        guard let selectedCategory else {
+            tableView.reloadData()
+            updateCreateButtonState()
+            return
+        }
+
+        guard categoryStore.categoryExists(with: selectedCategory) else {
+            self.selectedCategory = nil
+            tableView.reloadData()
+            updateCreateButtonState()
+            return
+        }
+
+        tableView.reloadData()
+        updateCreateButtonState()
     }
 }
 
